@@ -248,47 +248,5 @@ else:
     if submit_button:
         st.warning("Please upload an image file first.")
 
-# Instructions
-st.markdown("---")
-st.header("Instructions")
-st.markdown("""
-1. Upload an image (PNG, JPG, JPEG)
-2. Configure the generation parameters:
-   - **Remove Background**: Removes the background from your image (recommended)
-   - **Refine Multiview Details**: Improves model quality from different angles
-   - **Generate Video**: Creates a preview video of the 3D model
-   - **Seed**: Controls randomness (40 is recommended)
-   - **Expansion Weight**: Controls model expansion (0.2 is recommended)
-   - **Mesh Init**: Mesh initialization type ("thin" is recommended)
-3. Click 'Generate 3D Model' to start processing
-4. Once complete, you can download the 3D model, preview video, or all files as a ZIP package
 
-Note: The generation process may take several minutes depending on the complexity of the image.
-""")
 
-# Show environment status
-st.sidebar.header("Environment Status")
-if HF_TOKEN:
-    st.sidebar.success("✅ Hugging Face Token detected")
-else:
-    st.sidebar.error("❌ Hugging Face Token not found. Please set the HF_TOKEN environment variable.")
-
-# Add parameter explanation section
-st.sidebar.header("Parameter Explanation")
-st.sidebar.markdown("""
-**Remove Background**: Isolates the subject from the background, improving model quality.
-
-**Refine Multiview Details**: Enhances details when viewing the model from different angles.
-
-**Generate Video**: Creates a rotating preview of your 3D model.
-
-**Seed**: Controls randomness in generation. Use the same seed for reproducible results.
-
-**Expansion Weight**: Affects how much the model expands beyond the silhouette. Higher values create fuller models.
-
-**Mesh Init**: Starting shape for the 3D model:
-- thin: Best for slender objects
-- std: Good general purpose initialization
-- ellipsoid: Better for rounded objects
-- sphere: Best for spherical objects
-""")
