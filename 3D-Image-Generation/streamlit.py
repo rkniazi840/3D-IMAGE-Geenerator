@@ -186,23 +186,20 @@ def display_3d_model(model_path):
 st.title("Image to 3D Model Converter")
 st.write("Upload an image to generate a 3D model using Unique3D")
 
-# Create a form for file upload and parameters
+# Create a form for file upload with hidden parameters
 with st.form("upload_form"):
     uploaded_file = st.file_uploader("Choose an image file", type=list(ALLOWED_EXTENSIONS))
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        remove_bg = st.checkbox("Remove Background", value=True)
-        refine_details = st.checkbox("Refine Multiview Details", value=True)
-        generate_video = st.checkbox("Generate Video", value=False)
-    
-    with col2:
-        seed = st.number_input("Seed", value=40)
-        expansion_weight = st.number_input("Expansion Weight", value=0.2, min_value=0.0, max_value=1.0, step=0.1)
-        mesh_init = st.selectbox("Mesh Initialization", options=["std", "thin", "ellipsoid", "sphere"], index=1)
+    # Hidden parameters with default values
+    remove_bg = True
+    refine_details = True
+    generate_video = False
+    seed = 40
+    expansion_weight = 0.2
+    mesh_init = "thin"
     
     submit_button = st.form_submit_button("Generate 3D Model")
+
 
 # Process the submission
 if submit_button and uploaded_file is not None:
