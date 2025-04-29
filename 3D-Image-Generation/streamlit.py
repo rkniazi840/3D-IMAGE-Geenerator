@@ -10,8 +10,7 @@ import base64
 from dotenv import load_dotenv
 import time
 import re
-import streamlit.components.v1 as components
-import json
+import streamlit_3d_viewer as s3d
 
 # Load environment variables
 load_dotenv()
@@ -140,157 +139,6 @@ def generate_3d_model(uploaded_file, remove_bg, seed, generate_video, refine_det
         st.error(traceback.format_exc())
         return None, None, None
 
-# Create custom component for 3D model viewer using Babylon.js
-def babylon_viewer(model_url, height=500):
-    """
-    Custom component to display 3D model using Babylon.js
-    """
-    # HTML template for Babylon.js viewer
-    babylon_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Babylon.js 3D Model Viewer</title>
-        <style>
-            #babylon-canvas {{
-                width: 100%;
-                height: {height}px;
-                touch-action: none;
-                outline: none;
-            }}
-            #loading-screen {{
-                position: absolute;
-                width: 100%;
-                height: 100%;
-                background-color: #ffffff;
-                opacity: 0.8;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                z-index: 10;
-            }}
-            .spinner {{
-                border: 5px solid #f3f3f3;
-                border-top: 5px solid #3498db;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 2s linear infinite;
-                margin-bottom: 10px;
-            }}
-            @keyframes spin {{
-                0% {{ transform: rotate(0deg); }}
-                100% {{ transform: rotate(360deg); }}
-            }}
-        </style>
-        <script src="https://cdn.babylonjs.com/babylon.js"></script>
-        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    </head>
-    <body>
-        <div id="loading-screen">
-            <div class="spinner"></div>
-            <div>Loading 3D Model...</div>
-        </div>
-        <canvas id="babylon-canvas"></canvas>
-        <script>
-            const loadingScreen = document.getElementById('loading-screen');
-            const canvas = document.getElementById('babylon-canvas');
-            const engine = new BABYLON.Engine(canvas, true);
-            
-            const createScene = async function() {{
-                // Create scene
-                const scene = new BABYLON.Scene(engine);
-                scene.clearColor = new BABYLON.Color4(0.95, 0.95, 0.95, 1.0);
-                
-                // Add a camera
-                const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new BABYLON.Vector3(0, 0, 0), scene);
-                camera.attachControl(canvas, true);
-                camera.wheelPrecision = 50;
-                camera.lowerRadiusLimit = 1;
-                camera.upperRadiusLimit = 10;
-                
-                // Add lights
-                const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
-                const light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 5, -5), scene);
-                
-                // Load the model
-                try {{
-                    const result = await BABYLON.SceneLoader.ImportMeshAsync("", "{model_url}", "");
-                    
-                    // Center and scale the model
-                    const meshes = result.meshes;
-                    let minX = Number.MAX_VALUE, maxX = Number.MIN_VALUE;
-                    let minY = Number.MAX_VALUE, maxY = Number.MIN_VALUE;
-                    let minZ = Number.MAX_VALUE, maxZ = Number.MIN_VALUE;
-                    
-                    for (let i = 0; i < meshes.length; i++) {{
-                        const boundingBox = meshes[i].getBoundingInfo().boundingBox;
-                        
-                        minX = Math.min(minX, boundingBox.minimumWorld.x);
-                        maxX = Math.max(maxX, boundingBox.maximumWorld.x);
-                        
-                        minY = Math.min(minY, boundingBox.minimumWorld.y);
-                        maxY = Math.max(maxY, boundingBox.maximumWorld.y);
-                        
-                        minZ = Math.min(minZ, boundingBox.minimumWorld.z);
-                        maxZ = Math.max(maxZ, boundingBox.maximumWorld.z);
-                    }}
-                    
-                    const centerX = (minX + maxX) / 2;
-                    const centerY = (minY + maxY) / 2;
-                    const centerZ = (minZ + maxZ) / 2;
-                    
-                    const root = new BABYLON.TransformNode("root");
-                    for (let i = 0; i < meshes.length; i++) {{
-                        meshes[i].parent = root;
-                    }}
-                    
-                    root.position.x = -centerX;
-                    root.position.y = -centerY;
-                    root.position.z = -centerZ;
-                    
-                    // Scale to fit
-                    const rangeX = maxX - minX;
-                    const rangeY = maxY - minY;
-                    const rangeZ = maxZ - minZ;
-                    
-                    const maxDimension = Math.max(rangeX, rangeY, rangeZ);
-                    if (maxDimension > 2) {{
-                        const scale = 2 / maxDimension;
-                        root.scaling = new BABYLON.Vector3(scale, scale, scale);
-                    }}
-                    
-                    // Position camera to look at model
-                    camera.target = new BABYLON.Vector3(0, 0, 0);
-                    camera.radius = 3;
-                    
-                    loadingScreen.style.display = 'none';
-                }} catch (error) {{
-                    console.error('Error loading model:', error);
-                    loadingScreen.innerHTML = 'Error loading 3D model';
-                }}
-                
-                return scene;
-            }};
-            
-            createScene().then(scene => {{
-                engine.runRenderLoop(function() {{
-                    scene.render();
-                }});
-                
-                window.addEventListener('resize', function() {{
-                    engine.resize();
-                }});
-            }});
-        </script>
-    </body>
-    </html>
-    """
-    # Render the HTML using streamlit components
-    components.html(babylon_html, height=height+50)
-
 # Streamlit UI
 st.title("Image to 3D Model Converter")
 st.write("Upload an image to generate a 3D model using Unique3D")
@@ -340,18 +188,43 @@ if submit_button and uploaded_file is not None:
             with tab1:
                 st.subheader("3D Model Viewer")
                 
-                # Get the relative URL for the model file
-                model_filename = os.path.basename(model_path)
-                model_url = f"./{OUTPUT_FOLDER}/{model_filename}"
-                
-                # Display 3D model viewer
-                babylon_viewer(model_url, height=500)
-                
-                # Also provide download option
-                st.markdown(
-                    get_binary_file_downloader_html(model_path, "3D Model", "Download 3D Model (GLB)"),
-                    unsafe_allow_html=True
-                )
+                # Display the 3D model using streamlit-3d-viewer component
+                try:
+                    # Read the model file as bytes
+                    with open(model_path, "rb") as file:
+                        model_bytes = file.read()
+                    
+                    # Display using streamlit-3d-viewer
+                    s3d.visualize(model_bytes, height=500, css_id="my_model_viewer", file_type="glb")
+                    
+                    # Optional: Add download link below the viewer
+                    st.markdown(
+                        get_binary_file_downloader_html(model_path, "3D Model", "Download 3D Model (GLB)"),
+                        unsafe_allow_html=True
+                    )
+                except Exception as e:
+                    st.error(f"Error displaying 3D model: {e}")
+                    
+                    # Fallback to model-viewer HTML component
+                    st.write("Trying alternative 3D viewer...")
+                    
+                    # Get the file path for HTML embed
+                    model_url = os.path.abspath(model_path)
+                    
+                    # Create HTML for model-viewer
+                    model_viewer_html = f"""
+                    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+                    <model-viewer 
+                        src="file://{model_url}" 
+                        ar ar-modes="webxr scene-viewer quick-look" 
+                        camera-controls 
+                        shadow-intensity="1" 
+                        auto-rotate
+                        style="width: 100%; height: 500px;">
+                    </model-viewer>
+                    """
+                    
+                    st.components.v1.html(model_viewer_html, height=550)
             
             with tab2:
                 st.subheader("Preview Video")
