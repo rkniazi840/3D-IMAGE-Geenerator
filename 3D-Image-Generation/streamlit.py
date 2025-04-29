@@ -10,7 +10,6 @@ import base64
 from dotenv import load_dotenv
 import time
 import re
-import streamlit_3d_viewer as s3d
 
 # Load environment variables
 load_dotenv()
@@ -139,6 +138,50 @@ def generate_3d_model(uploaded_file, remove_bg, seed, generate_video, refine_det
         st.error(traceback.format_exc())
         return None, None, None
 
+def display_3d_model(model_path):
+    """Display 3D model using model-viewer component"""
+    # Convert the GLB file to Base64
+    with open(model_path, "rb") as f:
+        glb_bytes = f.read()
+    glb_base64 = base64.b64encode(glb_bytes).decode("utf-8")
+    
+    # Create the HTML for the model-viewer component
+    model_viewer_html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>3D Model Viewer</title>
+        <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+        <style>
+            model-viewer {{
+                width: 100%;
+                height: 500px;
+                background-color: #f5f5f5;
+                --poster-color: transparent;
+            }}
+        </style>
+    </head>
+    <body>
+        <model-viewer
+            id="model"
+            camera-controls
+            auto-rotate
+            shadow-intensity="1"
+            src="data:application/octet-stream;base64,{glb_base64}"
+            alt="3D Model"
+            ar
+            ar-modes="webxr scene-viewer quick-look"
+            environment-image="neutral">
+        </model-viewer>
+    </body>
+    </html>
+    """
+    
+    # Display using streamlit components
+    st.components.v1.html(model_viewer_html, height=520)
+
 # Streamlit UI
 st.title("Image to 3D Model Converter")
 st.write("Upload an image to generate a 3D model using Unique3D")
@@ -188,43 +231,17 @@ if submit_button and uploaded_file is not None:
             with tab1:
                 st.subheader("3D Model Viewer")
                 
-                # Display the 3D model using streamlit-3d-viewer component
+                # Display the 3D model
                 try:
-                    # Read the model file as bytes
-                    with open(model_path, "rb") as file:
-                        model_bytes = file.read()
-                    
-                    # Display using streamlit-3d-viewer
-                    s3d.visualize(model_bytes, height=500, css_id="my_model_viewer", file_type="glb")
-                    
-                    # Optional: Add download link below the viewer
+                    display_3d_model(model_path)
+                except Exception as e:
+                    st.error(f"Error displaying 3D model: {e}")
+                    # Provide download link as fallback
+                    st.info("3D model viewer couldn't be loaded. You can download the model instead.")
                     st.markdown(
                         get_binary_file_downloader_html(model_path, "3D Model", "Download 3D Model (GLB)"),
                         unsafe_allow_html=True
                     )
-                except Exception as e:
-                    st.error(f"Error displaying 3D model: {e}")
-                    
-                    # Fallback to model-viewer HTML component
-                    st.write("Trying alternative 3D viewer...")
-                    
-                    # Get the file path for HTML embed
-                    model_url = os.path.abspath(model_path)
-                    
-                    # Create HTML for model-viewer
-                    model_viewer_html = f"""
-                    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
-                    <model-viewer 
-                        src="file://{model_url}" 
-                        ar ar-modes="webxr scene-viewer quick-look" 
-                        camera-controls 
-                        shadow-intensity="1" 
-                        auto-rotate
-                        style="width: 100%; height: 500px;">
-                    </model-viewer>
-                    """
-                    
-                    st.components.v1.html(model_viewer_html, height=550)
             
             with tab2:
                 st.subheader("Preview Video")
