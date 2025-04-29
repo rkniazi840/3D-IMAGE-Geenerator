@@ -223,7 +223,7 @@ if submit_button and uploaded_file is not None:
             st.success("3D model generated successfully!")
             
             # Create tabs for different outputs
-            tab1, tab2, tab3 = st.tabs(["3D Model", "Video", "Download All"])
+            tab1, tab2, tab3 = st.tabs(["3D Model"])
             
             with tab1:
                 st.subheader("3D Model Viewer")
