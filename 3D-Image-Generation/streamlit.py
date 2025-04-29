@@ -222,61 +222,26 @@ if submit_button and uploaded_file is not None:
         if model_path and os.path.exists(model_path):
             st.success("3D model generated successfully!")
             
-            # Create tabs for different outputs
-            tab1, tab2, tab3 = st.tabs(["3D Model", "Video", "Download All"])
+            # Single tab for 3D model output
+            st.subheader("3D Model Viewer")
             
-            with tab1:
-                st.subheader("3D Model Viewer")
-                
-                # Display the 3D model
-                try:
-                    display_3d_model(model_path)
-                except Exception as e:
-                    st.error(f"Error displaying 3D model: {e}")
-                    # Provide download link as fallback
-                    st.info("3D model viewer couldn't be loaded. You can download the model instead.")
-                    st.markdown(
-                        get_binary_file_downloader_html(model_path, "3D Model", "Download 3D Model (GLB)"),
-                        unsafe_allow_html=True
-                    )
-            
-            with tab2:
-                st.subheader("Preview Video")
-                if video_path and os.path.exists(video_path):
-                    st.video(video_path)
-                    st.markdown(
-                        get_binary_file_downloader_html(video_path, "Video", "Download Preview Video"),
-                        unsafe_allow_html=True
-                    )
-                else:
-                    st.info("No preview video was generated")
-            
-            with tab3:
-                st.subheader("Download All Files")
-                
-                # Prepare files to include in the zip
-                files_to_zip = [model_path, image_path]
-                if video_path and os.path.exists(video_path):
-                    files_to_zip.append(video_path)
-                
-                # Create a zip file
-                base_filename = os.path.splitext(uploaded_file.name)[0]
-                zip_filename = f"{base_filename}_3d_package.zip"
-                zip_path = os.path.join(OUTPUT_FOLDER, zip_filename)
-                
-                with zipfile.ZipFile(zip_path, 'w') as zf:
-                    for file_path in files_to_zip:
-                        if os.path.exists(file_path):
-                            zf.write(file_path, os.path.basename(file_path))
-                
+            # Display the 3D model
+            try:
+                display_3d_model(model_path)
+            except Exception as e:
+                st.error(f"Error displaying 3D model: {e}")
+                # Provide download link as fallback
+                st.info("3D model viewer couldn't be loaded. You can download the model instead.")
                 st.markdown(
-                    get_binary_file_downloader_html(zip_path, "Zip Package", "Download All Files (ZIP)"),
+                    get_binary_file_downloader_html(model_path, "3D Model", "Download 3D Model (GLB)"),
                     unsafe_allow_html=True
                 )
-        else:
-            st.error("Failed to generate 3D model. Please try again.")
-    else:
-        st.error(f"Invalid file format. Please upload a file with one of these extensions: {', '.join(ALLOWED_EXTENSIONS)}")
-else:
-    if submit_button:
-        st.warning("Please upload an image file first.")
+            
+            # File validation and error handling
+            if uploaded_file:
+                if not os.path.splitext(uploaded_file.name)[1].lower() in ALLOWED_EXTENSIONS:
+                    st.error(f"Invalid file format. Please upload a file with one of these extensions: {', '.join(ALLOWED_EXTENSIONS)}")
+            else:
+                if submit_button:
+                    st.warning("Please upload an image file first.")
+
