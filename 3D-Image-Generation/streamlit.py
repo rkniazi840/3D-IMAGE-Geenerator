@@ -108,7 +108,7 @@ def generate_3d_model(uploaded_file, remove_bg, seed, generate_video, refine_det
         recreate_output_directory()
         
         # Hugging Face Space URL
-        hf_space_url = "https://wuvin-unique3d.hf.space"
+        hf_space_url = "https://wuvin-unique3d.hf.space/--replicas/zludo/"
         
         # Test connection first
         if not test_hf_connection(hf_space_url):
